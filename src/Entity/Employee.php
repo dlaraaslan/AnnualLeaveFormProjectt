@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\EmployeeRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -37,6 +39,14 @@ class Employee
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updated_at = null;
+
+    #[ORM\ManyToMany(targetEntity: AnnualLeave::class, inversedBy: 'employees')]
+    private Collection $annualLeaves;
+
+    public function __construct()
+    {
+        $this->annualLeaves = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -135,6 +145,30 @@ class Employee
     public function setUpdatedAt(\DateTimeInterface $updated_at): self
     {
         $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AnnualLeave>
+     */
+    public function getAnnualLeaves(): Collection
+    {
+        return $this->annualLeaves;
+    }
+
+    public function addAnnualLeaf(AnnualLeave $annualLeaf): self
+    {
+        if (!$this->annualLeaves->contains($annualLeaf)) {
+            $this->annualLeaves->add($annualLeaf);
+        }
+
+        return $this;
+    }
+
+    public function removeAnnualLeaf(AnnualLeave $annualLeaf): self
+    {
+        $this->annualLeaves->removeElement($annualLeaf);
 
         return $this;
     }
