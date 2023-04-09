@@ -157,7 +157,7 @@ class Employee
         return $this->annualLeaves;
     }
 
-    public function addAnnualLeaf(AnnualLeave $annualLeaf): self
+    public function addAnnualLeave(AnnualLeave $annualLeaf): self
     {
         if (!$this->annualLeaves->contains($annualLeaf)) {
             $this->annualLeaves->add($annualLeaf);

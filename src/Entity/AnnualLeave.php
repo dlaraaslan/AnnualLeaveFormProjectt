@@ -116,7 +116,7 @@ class AnnualLeave
     {
         if (!$this->employees->contains($employee)) {
             $this->employees->add($employee);
-            $employee->addAnnualLeaf($this);
+            $employee->addAnnualLeave($this);
         }
 
         return $this;
@@ -125,7 +125,7 @@ class AnnualLeave
     public function removeEmployee(Employee $employee): self
     {
         if ($this->employees->removeElement($employee)) {
-            $employee->removeAnnualLeaf($this);
+            $employee->removeAnnualLeave($this);
         }
 
         return $this;
