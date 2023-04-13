@@ -19,15 +19,80 @@ class EmployeesController extends AbstractController
        $this->em = $em;
     }
 
-    #[Route('/employee/{name}-{surname}', methods: ['GET'], name: 'show_employee')]
-    public function show($name, $surname): Response
+
+    #[Route('/check-leave')]
+    public function checkAnnualLeaves(EntityManagerInterface $em): Response
     {
-        $employee = $this->employeeRepository->findOneBy(['name' => $name, 'surname' => $surname], ['id' => 'DESC']);
-        $employee = $employee->getAnnualLeaves();
+        $startDate = new \DateTime('2023-04-04');
+        $endDate = new \DateTime('2023-04-06');
 
-        dd($employee);
+        $qb = $em->createQueryBuilder();
+        $qb->select('a')
+            ->from(AnnualLeave::class, 'a')
+            ->join('a.employee', 'e')
+            ->where('e.name LIKE :name')
+            ->andWhere('e.surname LIKE :surname')
+            ->andWhere('a.startDate <= :endDate')
+            ->andWhere('a.endDate >= :startDate')
+            ->setParameters([
+                'name' => '%Dilara%', 
+                'surname' => '%Kaya%', 
+                'startDate' => $startDate,
+                'endDate' => $endDate
+            ]);
 
-        #return $this->render('index.html.twig');
+        $annualLeaves = $qb->getQuery()->getResult();
+
+        if(count($annualLeaves) > 0) {
+            return new Response('Personel izinli');
+        } else {
+            return new Response('Personel izinli değil');
+        }
+    }
+
+    #[Route('/employee/{id}/{date}', methods: ['GET'], name: 'find_employee')]
+    public function checkLeaveStatus($id, $date): Response
+    {
+        $annuaLeaveRepository = $this->em->getRepository(AnnualLeave::class);
+
+        $employee = $this->employeeRepository->find($id);
+
+        $annuaLeaves = $annuaLeaveRepository->findBy(['employee' => $employee]);
+
+        foreach ($annuaLeaves as $leave) {
+            $startDate = $leave->getStartDate()->format('Y-m-d');
+            $endDate = $leave->getEndDate()->format('Y-m-d');
+            if ($date >= $startDate && $date <= $endDate) {
+                dd("izinli");
+            }
+        }
+        dd("izinli değil");
+    }
+
+    #[Route('/employees-leave-status', methods: ['GET'])]
+    public function employeeLeaveStatus(): Response
+    {
+        $startDate = new \DateTime('2023-05-01');
+        $endDate = new \DateTime('2023-05-31');
+
+        $employees = $this->employeeRepository->findAll();
+
+        $results = [];
+        foreach ($employees as $employee) {
+            $annualLeaves = $employee->getAnnualLeaves();
+            $leaveStatus = false;
+            foreach ($annualLeaves as $annualLeave) {
+                if ($annualLeave->getStartDate() <= $endDate && $annualLeave->getEndDate() >= $startDate) {
+                    $leaveStatus = true;
+                    break;
+                }
+            }
+            $results[] = [
+                'name' => $employee->getName() . ' ' . $employee->getSurname(),
+                'leave_status' => $leaveStatus ? 'izinli' : 'izinli değil'
+            ];
+        }
+        return $this->json($results);
     }
 
 
@@ -91,7 +156,7 @@ class EmployeesController extends AbstractController
         $employee = $this->employeeRepository->find($id);
         $this->em->remove($employee);
         $this->em->flush();
-        
+
         return $this->redirectToRoute('employees');
     }
 
